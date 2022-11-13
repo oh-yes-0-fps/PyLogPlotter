@@ -1,4 +1,5 @@
 import PySimpleGUI as gui
+import json
 
 template = {
             "array_names": [],
@@ -11,7 +12,8 @@ group_data = {}
 
 groups = list(group_data.keys())
 
-
+with open('.\\resources\\cached\\FRC_20221022_150128_NYROC_Q17.json', 'r') as f:
+    jdata = json.load(f)
 
 def rename_dict_keys(dict, old_key, new_key):
     dict[new_key] = dict.pop(old_key)
@@ -44,6 +46,9 @@ def update_list():
     # groups = new_groups
     groups = list(group_data.keys())
     window['-LIST-'].update(values=groups)
+
+def edit_window(name, group_data):
+    pass
 
 # Display and interact with the Window using an Event Loop
 while True:

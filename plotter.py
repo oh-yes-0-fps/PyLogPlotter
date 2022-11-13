@@ -44,7 +44,6 @@ def plot(traces:list[dlh.trace_structure], name:str):
         )
     )
 
-
     graph.show()
 
 def mode(_type:type):
