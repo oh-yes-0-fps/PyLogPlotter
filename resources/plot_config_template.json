@@ -3,10 +3,11 @@
         "auto_group_by_can": false,
         "auto_group_by_array": false,
         "blacklist_NT": false,
-        "global_blacklist": []
-    },
+        "global_blacklist": [],
+        "robot_name": ""
+        },
     "groupings": {
-        "Motors": {
+        "example": {
             "array_names": [],
             "trace_names": [],
             "sources": [],

@@ -1,14 +1,10 @@
-import datalogHandler as dlh
+import API.datalogHandler as dlh
 import json
 
 
-SMALL_FILE = 'FRC_20221022_150128_NYROC_Q17.wpilog'
-
-LARGE_FILE = 'FRC_20221012_000713.wpilog'
 
 
-
-if __name__ == '__main__':
+def dump(fileReadName:str, fileWriteName:str):
 
     jdata = {
         'names': [],
@@ -17,7 +13,7 @@ if __name__ == '__main__':
         'arraynames': [],
     }
 
-    log = dlh.DatalogHandler(SMALL_FILE)
+    log = dlh.DatalogHandler(fileReadName)
     for i in log:
         i:dlh.trace_structure
         jdata['names'].append(i.name)
@@ -25,8 +21,6 @@ if __name__ == '__main__':
         jdata['arraynames'].extend(i.metadata.get('ARRAY', []))
     jdata['sources'] = list(set(jdata['sources']))
     jdata['arraynames'] = list(set(jdata['arraynames']))
-    file_name = SMALL_FILE.removesuffix('.wpilog')
-    with open(f'.\\resources\\cached\\{file_name}.json', 'w') as f:
+    with open(f'.\\resources\\cached\\{fileWriteName}.json', 'w') as f:
         json.dump(jdata, f)
-    pass
 

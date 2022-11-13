@@ -1,8 +1,7 @@
-import pandas as pd #we love native code😖
-import datalog as dl
+import API.datalog as dl
 from datetime import datetime
 import mmap
-import sys
+# import sys
 from typing import Any, Union, Optional
 from types import NoneType
 import re
@@ -119,8 +118,8 @@ class DatalogHandler:
             mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
             self.reader = dl.DataLogReader(mm) #type: ignore
             if not self.reader:
-                print("not a log file", file=sys.stderr)
-                sys.exit(1)
+                print("not a log file")
+                exit(1)
         self.parse_datalog()
 
 
