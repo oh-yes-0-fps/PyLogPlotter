@@ -4,10 +4,11 @@ from datetime import datetime
 import mmap
 import sys
 import re
+import timeit
 
 TIMESTAMP_DENOMINATOR = 1000000
 
-class dataframe_entry:
+class entry_structure:
     """
     An easily mutable representation of the data needed for a\n
     pandas DataFrame, can be converted to a DataFrame with to_dataframe()
@@ -15,11 +16,12 @@ class dataframe_entry:
     def __init__(self, name:str, type:str, metadata:str):
         self.data = []
         self.index = []
+        self.name = name
         self.columns = [name]
         self.dtype = type
         self.metadata = metadata
         self.metadata_parser()
-        self.type_str_to_type()
+        # self.type_str_to_type()
 
 
     def metadata_parser(self):
@@ -35,42 +37,39 @@ class dataframe_entry:
             del meta_dct['NAMES']
         self.metadata = meta_dct
 
-    def type_str_to_type(self):
-        if self.dtype == 'int64':
-            self.dtype = int
-        elif self.dtype == 'float':
-            self.dtype = float
-        elif self.dtype == 'string':
-            self.dtype = str
-        elif self.dtype == 'boolean':
-            self.dtype = bool
-        elif self.dtype == 'double':
-            self.dtype = float
-        ##arrays
-        elif self.dtype == 'int64[]':
-            self.dtype = list[int]
-        elif self.dtype == 'float[]':
-            self.dtype = list[float]
-        elif self.dtype == 'string[]':
-            self.dtype = list[str]
-        elif self.dtype == 'boolean[]':
-            self.dtype = list[bool]
-        elif self.dtype == 'double[]':
-            self.dtype = list[float]
-        else:
-            self.dtype = None
+    # def type_str_to_type(self):
+    #     if self.dtype == 'int64':
+    #         self.dtype = int
+    #     elif self.dtype == 'float':
+    #         self.dtype = float
+    #     elif self.dtype == 'string':
+    #         self.dtype = str
+    #     elif self.dtype == 'boolean':
+    #         self.dtype = bool
+    #     elif self.dtype == 'double':
+    #         self.dtype = float
+    #     elif '[]' in self.dtype:
+    #         self.dtype = list
+    #     else:
+    #         self.dtype = None
+
+    def __repr__(self) -> str:
+        return f'{self.name} :: {self.dtype} :: {self.metadata}'
 
     def add(self, value, timestamp):
+        # if value is list create list with as many entries as len of value
+        if isinstance(value, list):
+            if len(self.columns) != len(value):
+                self.columns = [self.name+'_UnNamed']*len(value)
         self.data.append(value)
-        self.index.append(timestamp)
+        self.index.append(datetime.fromtimestamp(timestamp))
+        # print(timestamp)
 
-    def to_dataframe(self):
-        return pd.DataFrame(self.data, index=self.index, columns=self.columns, dtype=self.dtype)
 
 
 class DatalogHandler:
     def __init__(self, filename: str):
-        self.data_entries:dict[str, dataframe_entry] = {}
+        self.data_entries:list[entry_structure] = []
         #---------File Extraction and Verification--------#
         with open(filename, "r") as f:
             mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
@@ -83,21 +82,26 @@ class DatalogHandler:
     def parse_datalog(self):
 
         sys_time_calls = 0
+        guide:dict[int, str] = {}
 
         #---------Data Extraction--------#
         f_entries:dict[str, dl.StartRecordData] = {}
         for record in self.reader:
-            timestamp = record.timestamp / TIMESTAMP_DENOMINATOR
+            timestamp = record.timestamp
             if record.isStart():
                 try:
                     data = record.getStartData()
-                    self.data_entries[data.name] = dataframe_entry(data.name, data.type, data.metadata)
+                    f_entries[data.entry] = data
+                    self.data_entries.insert(data.entry ,entry_structure(data.name, data.type, data.metadata))
                 except TypeError as e:
                     print("Error: ", e)
             elif record.isFinish():
                 try:
                     entry = record.getFinishEntry()
-                    del f_entries[entry]
+                    try:
+                        del f_entries[entry]
+                    except KeyError:
+                        pass
                 except TypeError as e:
                     print("Error: ", e)
             elif record.isSetMetadata():
@@ -117,6 +121,7 @@ class DatalogHandler:
                         continue
                     if entry.type == "double":
                         value = record.getDouble()
+                        # print(value)
                     elif entry.type == "int64":
                         value = record.getInteger()
                     elif entry.type == "string" or entry.type == "json":
@@ -133,10 +138,10 @@ class DatalogHandler:
                         value = record.getIntegerArray().tolist()
                     elif entry.type == "string[]":
                         value = record.getStringArray()
-                    self.data_entries[entry.name].add(value, timestamp)
+                    self.data_entries[record.entry].add(value, timestamp)
                 except TypeError as e:
                     print("Error: ", e)
         print(f"Duration of log: {sys_time_calls*5} seconds")
 
-    def __call__(self):
-        pass
+    def __iter__(self):
+        return iter(self.data_entries)
