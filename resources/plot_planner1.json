@@ -1,0 +1,16 @@
+{
+    "settings": {
+        "auto_group_by_can": false,
+        "auto_group_by_array": false,
+        "blacklist_NT": false,
+        "global_blacklist": []
+    },
+    "groupings": {
+        "Motors": {
+            "array_names": [],
+            "trace_names": [],
+            "sources": [],
+            "blacklisted_types": []
+        }
+    }
+}
