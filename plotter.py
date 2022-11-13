@@ -2,8 +2,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import datalogHandler as dlh
-import random
-import timeit
+
 
 SMALL_FILE = 'FRC_20221022_150128_NYROC_Q17.wpilog'
 
@@ -14,51 +13,26 @@ LINE_TYPES = [float, int]
 MARKER_TYPES = [str, bool]
 
 
-def meta_sorter(data_entries:dict[str, dlh.entry_structure]):
-    source_dct = {}
-    can_dct = {}
-    for entry in data_entries:
-        src = data_entries[entry].metadata.get('source', None)
-        source_dct[data_entries[entry].name] = src
-        can = data_entries[entry].metadata.get('CAN', None)
-        can_dct[data_entries[entry].name] = can
-    return source_dct, can_dct
+# def meta_sorter(data_entries:dict[str, dlh.entry_structure]):
+#     source_dct = {}
+#     can_dct = {}
+#     for entry in data_entries:
+#         src = data_entries[entry].metadata.get('source', None)
+#         source_dct[data_entries[entry].name] = src
+#         can = data_entries[entry].metadata.get('CAN', None)
+#         can_dct[data_entries[entry].name] = can
+#     return source_dct, can_dct
 
-def plot(entry:str):
-    e_struct = m_de[entry]
+def plot(traces:list[dlh.trace_structure], name:str):
 
-    try:
-        if e_struct.dtype == list:
-            etype = e_struct.data[0][0]
-            print(e_struct.name)
-        else:
-            etype = e_struct.dtype
-    except IndexError:
-        etype = None
-        e_struct.columns = ['empty']
+    graph = go.Figure() #GET IT, GOFIGURE!!!!!!!!!
 
-    if etype in LINE_TYPES:
-        display_mode = 'lines'
-    elif etype in MARKER_TYPES:
-        display_mode = 'markers'
-    else:
-        display_mode = 'lines+markers'
 
-    graph = go.Figure()
+    for trace in traces:
+        if trace == True:
+            graph.add_trace(go.Scatter(x=trace.timestamps, y=trace.data, mode= mode(trace.type), showlegend=True, name=trace.name))
 
-    if len(e_struct.columns) == 1:
-        graph.add_trace(go.Scatter(x=e_struct.index, y=e_struct.data, mode= display_mode, showlegend=True))
-    else:
-        for i in range(len(e_struct.columns)):
-            trace_lst = []
-            for j in e_struct.data:
-                trace_lst.append(j[i])
-            graph.add_trace(go.Scatter(x=e_struct.index, y=e_struct.data[i], name=e_struct.columns[i], mode= display_mode, showlegend=True))
-
-    if e_struct.dtype == list:
-        graph.update_layout(title_text=f"{','.join(e_struct.columns)} vs Time", xaxis_title="Time", yaxis_title=f"{','.join(e_struct.columns)}")
-    else:
-        graph.update_layout(title_text=f"{e_struct.name} vs Time", xaxis_title="Time", yaxis_title=f"{e_struct.name}", )
+    graph.update_layout(xaxis_title="Time", yaxis_title=f"Data", )#title_text=f"{e_struct.name} vs Time", 
 
     # Add range slider
     graph.update_layout(
@@ -73,14 +47,27 @@ def plot(entry:str):
 
     graph.show()
 
+def mode(_type:type):
+    if _type in LINE_TYPES:
+        return 'lines'
+    elif _type in MARKER_TYPES:
+        return 'markers'
+    else:
+        return 'lines+markers'
 
+NUM_TO_SHOW = 10
+
+import random
 
 if __name__ == '__main__':
-    entries:list[str] = []
+    logs_shown = 0
     log = dlh.DatalogHandler(LARGE_FILE)
-    m_de:dict[str, dlh.entry_structure] = log.data_entries
-    for i in m_de:
-        plot(i)
-    # source_dct, can_dct = meta_sorter(m_de)
-    # for i in source_dct:
-    #         plot(i)
+    for trace in log:
+        trace = [trace] #type: ignore
+        trace:list[dlh.trace_structure]  #just type annotation
+        if random.randint(0, 100) < 11:
+            plot(trace, "NAME")
+            logs_shown += 1
+        if logs_shown >= NUM_TO_SHOW:
+            break
+

@@ -1,0 +1,16 @@
+{
+    "settings": {
+        "auto_group_by_can": true,
+        "auto_group_by_array": true,
+        "blacklist_NT": false,
+        "global_blacklist": []
+        },
+    "groupings": {
+        "example": {
+            "array_names": ["",""],
+            "trace_names": ["",""],
+            "sources": ["",""],
+            "blacklisted_types": ["",""]
+        }
+    }
+}
