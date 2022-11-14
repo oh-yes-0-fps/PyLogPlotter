@@ -4,7 +4,7 @@
         "auto_group_by_array": false,
         "blacklist_NT": false,
         "global_blacklist": [],
-        "robot_name": "antsinthebox"
+        "robot_name": "cruisee_dump_example"
     },
     "groupings": {
         "Motors": {

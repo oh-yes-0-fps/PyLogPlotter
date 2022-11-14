@@ -34,7 +34,10 @@ def plot(traces:list[dlh.trace_structure], name:str):
         )
     )
 
-    graph.show()
+    html_text = graph.to_html(full_html=True)
+    #write html to file
+    with open(f'.\\plots\\{name}.html', 'w') as f:
+        f.write(html_text)
 
 def mode(_type:type):
     if _type in LINE_TYPES:
@@ -47,7 +50,7 @@ def mode(_type:type):
 def filter_traces(traces:list[dlh.trace_structure], planner):
     planner = planner.removesuffix('.json').split('\\')[-1]
     with open(f'.\\resources\\{planner}.json', 'r') as f:
-        jdata = json.load(f)
+        jdata:dict[str,dict] = json.load(f)
     can_id = {}
     array_name = {}
     gloabl_blacklist = set(jdata['settings']['global_blacklist'])
@@ -64,14 +67,15 @@ def filter_traces(traces:list[dlh.trace_structure], planner):
         del array_name['_']
     if '_' in can_id:
         del can_id['_']
-    for group_name, Group_filter in enumerate(jdata['groupings']):
+    groupings = jdata['groupings']
+    for group_name in groupings:
         #Making sets for faster sspeeds... not sure it really matters but why not
-        trace_names = set(Group_filter['trace_names'])
-        array_names = Group_filter['array_names']
-        sources = Group_filter['sources']
+        trace_names = set(groupings[group_name]['trace_names'])
+        array_names = groupings[group_name]['array_names']
+        sources = groupings[group_name]['sources']
         groups[group_name] = []
         for trace in traces:
-            if trace.type.__name__ in Group_filter['blacklisted_types']:
+            if trace.type.__name__ in groupings[group_name]['blacklisted_types']:
                 continue
             elif trace.name in jdata['settings']['global_blacklist']:
                 continue
@@ -88,7 +92,7 @@ def filter_traces(traces:list[dlh.trace_structure], planner):
         
 def plot_by_filename(filename:str, planner:str):
     log = dlh.DatalogHandler(sys.argv[1])
-    _groups, _can_id, _array_name = filter_traces(log, planner)
+    _groups, _can_id, _array_name = filter_traces(log, planner) #type: ignore
     for i in _groups:
         plot(_groups[i], i)
     for i in _can_id:
@@ -104,11 +108,8 @@ if __name__ == '__main__':
     group.add_argument('-p','--plot', action='store_true', help='The file to plot, needs -c aswell')
     group.add_argument('-g', '--gui', action='store_true', help='Run the config helper gui, needs -c aswell')
     parser.add_argument('-c', '--config', type=str, help='The json in resources to config the plots with', )
-    parser.add_argument('-d', '--dump', type=None, help='A preliminary dump of the log file for data to use in gui, feed in name of robot')
+    parser.add_argument('-d', '--dump', help='A preliminary dump of the log file for data to use in gui, feed in name of robot')
     args = parser.parse_args()
-    # if args.config:
-    #     with open(args.config, 'r') as f:
-    #         jdata = json.load(f)
     if args.dump:
         from API.LogDumper import dump
         dump(args.filename, args.dump)
