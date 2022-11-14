@@ -1,0 +1,28 @@
+{
+    "settings": {
+        "auto_group_by_can": false,
+        "auto_group_by_array": false,
+        "blacklist_NT": false,
+        "global_blacklist": [],
+        "robot_name": "antsinthebox"
+    },
+    "groupings": {
+        "Motors": {
+            "array_names": [],
+            "trace_names": [
+                "Idx/Index-Amps",
+                "Idx/Rotations",
+                "Acq/Roller-Amps",
+                "Shooter/Front-Amps",
+                "Shooter/Back-Amps",
+                "NT:/SmartDashboard/Balls indexed",
+                "NT:/SmartDashboard/Index Position"
+            ],
+            "sources": [],
+            "blacklisted_types": [
+                "bool",
+                "str"
+            ]
+        }
+    }
+}

@@ -44,14 +44,15 @@ def mode(_type:type):
     else:
         return 'lines+markers'
 
-def filter_traces(traces:list[dlh.trace_structure]):
+def filter_traces(traces:list[dlh.trace_structure], planner):
+    planner = planner.removesuffix('.json').split('\\')[-1]
+    with open(f'.\\resources\\{planner}.json', 'r') as f:
+        jdata = json.load(f)
     can_id = {}
     array_name = {}
     gloabl_blacklist = set(jdata['settings']['global_blacklist'])
     groups = {}
     #gonna handle it in a few steps, def not the fastest way but should work for now
-    with open('.\\resources\\plot_planner.json', 'r') as f:
-        jdata = json.load(f)
     for i in traces:
         if i.name in gloabl_blacklist:
             continue
@@ -85,9 +86,9 @@ def filter_traces(traces:list[dlh.trace_structure]):
                 continue
     return groups, can_id, array_name
         
-def plot_by_filename(filename:str):
+def plot_by_filename(filename:str, planner:str):
     log = dlh.DatalogHandler(sys.argv[1])
-    _groups, _can_id, _array_name = filter_traces(log)
+    _groups, _can_id, _array_name = filter_traces(log, planner)
     for i in _groups:
         plot(_groups[i], i)
     for i in _can_id:
@@ -99,11 +100,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot a log file')
     # mut_group = parser.add_mutually_exclusive_group()
     parser.add_argument('filename', type=str, help='The file to plot')
-    parser.add_argument('-p','--plot', action='store_true', help='The file to plot, needs -c aswell')
-    parser.add_argument('-g', '--gui', action='store_true', help='Run the config helper gui, needs -c aswell')
-    parser.add_argument('-c', '--config', type=str, help='The json in resources to config the plots with')
-    parser.add_argument('-d', '--dump', type=str, help='A preliminary dump of the log file for data to use in gui, feed in name of robot')
-    # parser.add_argument('-h', '--help', action='store_true', help='Show this help message')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-p','--plot', action='store_true', help='The file to plot, needs -c aswell')
+    group.add_argument('-g', '--gui', action='store_true', help='Run the config helper gui, needs -c aswell')
+    parser.add_argument('-c', '--config', type=str, help='The json in resources to config the plots with', )
+    parser.add_argument('-d', '--dump', type=None, help='A preliminary dump of the log file for data to use in gui, feed in name of robot')
     args = parser.parse_args()
     # if args.config:
     #     with open(args.config, 'r') as f:
@@ -119,5 +120,9 @@ if __name__ == '__main__':
             print('No config file specified, cannot  launch gui')
             exit(1)
     if args.plot:
-        plot_by_filename(args.filename)
+        if args.config:
+            plot_by_filename(args.filename, args.config)
+        else:
+            print('No config file specified, cannot plot')
+            exit(1)
  

@@ -42,13 +42,16 @@ def Main(planner:str):
     # Create the window
     gui.change_look_and_feel('DarkGrey12')   # Add a touch of color
     window = gui.Window('Plot Planner', layout=layout, finalize=True, resizable=True, size=(1280, 720))
-    if settings['robot_name'] == '':
-        settings['robot_name'] = gui.popup_get_text('Enter Robot Name', 'Robot Name')
-    robot_name = settings['robot_name']
-    with open(f'.\\resources\\cached\\{robot_name}.json', 'r') as f:
-        jdata = json.load(f)
-        jdata['types'] = ['float', 'int', 'str', 'bool']
-
+    try:
+        if settings['robot_name'] == '':
+            settings['robot_name'] = gui.popup_get_text('Enter Robot Name', 'Robot Name')
+        robot_name = settings['robot_name']
+        with open(f'.\\resources\\cached\\{robot_name}.json', 'r') as f:
+            jdata = json.load(f)
+            jdata['types'] = ['float', 'int', 'str', 'bool']
+    except Exception:
+        print('Robot Name Needed for dump info')
+        exit(1)
     def find(str, list):
         for i in range(len(list)):
             if str == list[i]:
@@ -92,7 +95,7 @@ def Main(planner:str):
                 break
             if event is None:
                 break
-            print(event, '<|>', values)
+            # print(event, '<|>', values)
             #let the spaghetti begin
             if values['selcted_names']:
                 idx = find(values['selcted_names'][0], group_data[name]['trace_names'])
@@ -145,7 +148,7 @@ def Main(planner:str):
                 break
             if event is None:
                 break
-            print(event, '<|>', values)
+            # print(event, '<|>', values)
             if values['global_blacklist']:
                 idx = find(values['global_blacklist'][0], settings['global_blacklist'])
                 settings['global_blacklist'].pop(idx)
