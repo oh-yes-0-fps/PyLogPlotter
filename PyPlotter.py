@@ -1,8 +1,11 @@
+from datetime import datetime
+from sqlite3 import Timestamp
 import plotly.graph_objects as go
 import API.datalogHandler as dlh
 import sys
 import json
 import argparse
+import numpy as np
 
 
 SMALL_FILE = 'FRC_20221022_150128_NYROC_Q17.wpilog'
@@ -13,16 +16,31 @@ LINE_TYPES = [float, int]
 
 MARKER_TYPES = [str, bool]
 
+class timeFixer:
+    def __init__(self, timeOffset:float) -> None:
+        self.timeOffset = timeOffset
+    def __call__(self, timeList:list[float]):# -> np.ndarray
+        times:list[str] = list(map(self.timestapmToISO, timeList))
+        # dt = datetime.fromtimestamp(times[0]).isoformat()
+        # print("  {:%Y-%m-%d %H:%M:%S.%f}".format(dt))
+        print(times[0])
+        # return np.array(times, dtype="datetime64[ms]")
+        return times
+
+    def timestapmToISO(self, _timestamp:float):
+        timestamp = _timestamp - self.timeOffset
+        dt = datetime.fromtimestamp(timestamp).isoformat()
+        return dt
+
 def plot(traces:list[dlh.trace_structure], name:str):
 
     graph = go.Figure() #GET IT, GOFIGURE!!!!!!!!!
 
-
     for trace in traces:
         if trace == True:
-            graph.add_trace(go.Scatter(x=trace.timestamps, y=trace.data, mode= mode(trace.type), showlegend=True, name=trace.name))
+            graph.add_trace(go.Scatter(x=i_TimeFixer(trace.timestamps), y=trace.data, mode= mode(trace.type), showlegend=True, name=trace.name))
 
-    graph.update_layout(xaxis_title="Time", yaxis_title=f"Data", )#title_text=f"{e_struct.name} vs Time", 
+    graph.update_layout(title_text=f"{name} vs Time", xaxis_title="Time", yaxis_title=f"Data")
 
     # Add range slider
     graph.update_layout(
@@ -92,6 +110,8 @@ def filter_traces(traces:list[dlh.trace_structure], planner):
         
 def plot_by_filename(filename:str, planner:str):
     log = dlh.DatalogHandler(sys.argv[1])
+    global i_TimeFixer
+    i_TimeFixer = timeFixer(log.timeOffset)
     _groups, _can_id, _array_name = filter_traces(log, planner) #type: ignore
     for i in _groups:
         plot(_groups[i], i)

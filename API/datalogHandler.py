@@ -1,3 +1,5 @@
+from sqlite3 import Timestamp
+from numpy import average
 import API.datalog as dl
 from datetime import datetime
 import mmap
@@ -8,12 +10,14 @@ import re
 
 REPR_METADATA = True
 
+highest_diff = 0
+points_added = 0
+
 class trace_structure:
     """
     An easily mutable representation of the data needed for a\n
     plotly graph trace, with a name, data, and timestamps for data.
     """
-
     def __init__(self, _name:str, _type:type, _metadata:dict[str, list]):
         self.name = _name
         self.type = _type
@@ -40,7 +44,14 @@ class trace_structure:
             return False
 
     def trace_append(self, value:object, timestamp:float):
+        global highest_diff
+        global points_added
         if value:
+            if len(self.data) != 0 and (isinstance(value, int) or isinstance(value, float)):
+                if (timestamp - self.timestamps[-1]) > 0.5:#makes lines more accurate
+                    self.timestamps.append(timestamp-0.25)
+                    self.data.append(self.data[-1])
+                    points_added += 1
             self.data.append(value)
             self.timestamps.append(timestamp)
 
@@ -89,7 +100,8 @@ class entry_manager:
             else:
                 self.traces.append(trace_structure(self.name, self.type[0], self.metaData))
 
-    def add(self, value:object, timestamp:float) -> None:
+    def add(self, value:object, _timestamp:float) -> None:
+        timestamp = _timestamp/1_000_000
         if self.bHasBeenAbandoned:return #if its an array that has varying entry lenghts im just gonna ignore it
         if not self.traces:
             if isinstance(value, list):
@@ -113,6 +125,7 @@ class entry_manager:
 class DatalogHandler:
     def __init__(self, filename: str):
         self.data_entries:dict[str, entry_manager] = {}
+        self.timeOffset = 0
         #---------File Extraction and Verification--------#
         with open(filename, "r") as f:
             mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
@@ -128,6 +141,8 @@ class DatalogHandler:
         raw_entries = 0
 
         sys_time_calls = 0
+
+        offsetList = []
 
         #---------Data Extraction--------#
         f_entries:dict[int, dl.StartRecordData] = {}
@@ -167,6 +182,7 @@ class DatalogHandler:
                     # every 5 seconds robot should send a systemTime record
                     if entry.name == "systemTime" and entry.type == "int64":
                         sys_time_calls += 1
+                        offsetList.append(timestamp/1_000_000 - record.getInteger() / 1_000_000)
                         continue
                     if entry.type == "double":
                         value = record.getDouble()
@@ -195,7 +211,10 @@ class DatalogHandler:
                     self.data_entries[entry.name].add(value, timestamp)
                 except TypeError as e:
                     print("Error: ", e)
+        self.timeOffset = float(average(offsetList))
         print(f"Duration of log: {sys_time_calls*5} seconds")
+        global points_added
+        print(f"Points added: {points_added}")
         if raw_entries:
             print(f"Unparsed Raw entries: {raw_entries}")
 
@@ -227,4 +246,4 @@ def get_type(type_string:str) -> tuple[type, Optional[type]]:
     elif type_string == 'string[]':
         return (str, list)
     else:
-        return (NoneType, None)
+        return (type(None), None)
