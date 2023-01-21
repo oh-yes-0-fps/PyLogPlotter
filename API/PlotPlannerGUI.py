@@ -90,7 +90,7 @@ def Main(planner:str):
             window2['selcted_types'].update(values=group_data[name]['blacklisted_types'])
         while True:
             __update_lists()
-            event, values = window2.read()
+            event, values = window2.read() #type: ignore
             if event == gui.WIN_CLOSED or event == 'Cancel':
                 break
             if event is None:
@@ -123,7 +123,7 @@ def Main(planner:str):
                     group_data[name]['blacklisted_types'].append(values['possible_types'][0])
             if event:
                 write_json({"settings": settings,"groupings": group_data})
-        window2.close()
+        window2.close() #type: ignore
 
     def setting_window(settings):
         layout = [
@@ -143,7 +143,7 @@ def Main(planner:str):
             __update_lists()
             for i in window3.element_list():
                 print(f'{i} -> {i.key}')
-            event, values = window3.read()
+            event, values = window3.read() #type: ignore
             if event == gui.WIN_CLOSED or event == 'Cancel':
                 break
             if event is None:
@@ -173,7 +173,7 @@ def Main(planner:str):
     # Display and interact with the Window using an Event Loop
     while True:
         update_list()
-        event, values = window.read()
+        event, values = window.read() #type: ignore
         # See if user wants to quit or window was closed
         if event == gui.WIN_CLOSED or event == 'Cancel':
             break

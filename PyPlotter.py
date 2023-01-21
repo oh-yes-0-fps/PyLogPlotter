@@ -1,11 +1,9 @@
 from datetime import datetime
-from sqlite3 import Timestamp
 import plotly.graph_objects as go
 import API.datalogHandler as dlh
 import sys
 import json
 import argparse
-import numpy as np
 
 
 SMALL_FILE = 'FRC_20221022_150128_NYROC_Q17.wpilog'
@@ -19,11 +17,11 @@ MARKER_TYPES = [str, bool]
 class timeFixer:
     def __init__(self, timeOffset:float) -> None:
         self.timeOffset = timeOffset
-    def __call__(self, timeList:list[float]):# -> np.ndarray
+    def __call__(self, timeList:list[float]):
         times:list[str] = list(map(self.timestapmToISO, timeList))
         # dt = datetime.fromtimestamp(times[0]).isoformat()
         # print("  {:%Y-%m-%d %H:%M:%S.%f}".format(dt))
-        print(times[0])
+        # print(times[0])
         # return np.array(times, dtype="datetime64[ms]")
         return times
 
@@ -146,4 +144,3 @@ if __name__ == '__main__':
         else:
             print('No config file specified, cannot plot')
             exit(1)
- 

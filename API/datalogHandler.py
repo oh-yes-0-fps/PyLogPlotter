@@ -1,5 +1,4 @@
 from sqlite3 import Timestamp
-from numpy import average
 import API.datalog as dl
 from datetime import datetime
 import mmap
@@ -92,13 +91,16 @@ class entry_manager:
         return meta_dct
 
     def construct_traces(self, traces:int) -> None:
-        #i don't like how many for loops im doing but i dont know how to do it better
+        if traces == 1:
+            self.traces.append(trace_structure(self.name, self.type[0], self.metaData))
+            return
+        names = self.metaData.get('NAMES', [])
         for i in range(traces):
-            names = self.metaData.get('NAMES', None)
-            if (not names or len(names) != traces) and traces > 1:
-                self.traces.append(trace_structure(f'{self.name}_{i}', self.type[0], self.metaData))
-            else:
-                self.traces.append(trace_structure(self.name, self.type[0], self.metaData))
+            try:
+                _name = names[i]
+            except IndexError:
+                _name = f'{self.name}_{i}'
+            self.traces.append(trace_structure(str(_name), self.type[0], self.metaData))
 
     def add(self, value:object, _timestamp:float) -> None:
         timestamp = _timestamp/1_000_000
@@ -211,7 +213,7 @@ class DatalogHandler:
                     self.data_entries[entry.name].add(value, timestamp)
                 except TypeError as e:
                     print("Error: ", e)
-        self.timeOffset = float(average(offsetList))
+        self.timeOffset = float(sum(offsetList) / len(offsetList))
         print(f"Duration of log: {sys_time_calls*5} seconds")
         global points_added
         print(f"Points added: {points_added}")
