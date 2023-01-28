@@ -1,10 +1,12 @@
 from datetime import datetime
+from pathlib import Path
 import plotly.graph_objects as go
 import API.datalogHandler as dlh
 import sys
 import json
 import argparse
 
+# output_path =
 
 SMALL_FILE = 'FRC_20221022_150128_NYROC_Q17.wpilog'
 
@@ -14,31 +16,36 @@ LINE_TYPES = [float, int]
 
 MARKER_TYPES = [str, bool]
 
+
 class timeFixer:
-    def __init__(self, timeOffset:float) -> None:
+    def __init__(self, timeOffset: float) -> None:
         self.timeOffset = timeOffset
-    def __call__(self, timeList:list[float]):
-        times:list[str] = list(map(self.timestapmToISO, timeList))
+
+    def __call__(self, timeList: list[float]):
+        times: list[str] = list(map(self.timestapmToISO, timeList))
         # dt = datetime.fromtimestamp(times[0]).isoformat()
         # print("  {:%Y-%m-%d %H:%M:%S.%f}".format(dt))
         # print(times[0])
         # return np.array(times, dtype="datetime64[ms]")
         return times
 
-    def timestapmToISO(self, _timestamp:float):
+    def timestapmToISO(self, _timestamp: float):
         timestamp = _timestamp - self.timeOffset
         dt = datetime.fromtimestamp(timestamp).isoformat()
         return dt
 
-def plot(traces:list[dlh.trace_structure], name:str):
 
-    graph = go.Figure() #GET IT, GOFIGURE!!!!!!!!!
+def plot(traces: list[dlh.trace_structure], name: str):
+
+    graph = go.Figure()  # GET IT, GOFIGURE!!!!!!!!!
 
     for trace in traces:
         if trace == True:
-            graph.add_trace(go.Scatter(x=i_TimeFixer(trace.timestamps), y=trace.data, mode= mode(trace.type), showlegend=True, name=trace.name))
+            graph.add_trace(go.Scatter(x=i_TimeFixer(trace.timestamps), y=trace.data, mode=mode(
+                trace.type), showlegend=True, name=trace.name))
 
-    graph.update_layout(title_text=f"{name} vs Time", xaxis_title="Time", yaxis_title=f"Data")
+    graph.update_layout(
+        title_text=f"{name} vs Time", xaxis_title="Time", yaxis_title=f"Data")
 
     # Add range slider
     graph.update_layout(
@@ -50,12 +57,15 @@ def plot(traces:list[dlh.trace_structure], name:str):
         )
     )
 
-    html_text = graph.to_html(full_html=True)
-    #write html to file
-    with open(f'.\\plots\\{name}.html', 'w') as f:
-        f.write(html_text)
+    print(graph.data)
 
-def mode(_type:type):
+    html_text = graph.to_html(full_html=True)
+    # write html to file
+    with open(f'./plots/{name}.html', 'wb') as f:
+        f.write(html_text.encode('utf-8'))
+
+
+def mode(_type: type):
     if _type in LINE_TYPES:
         return 'lines'
     elif _type in MARKER_TYPES:
@@ -63,15 +73,16 @@ def mode(_type:type):
     else:
         return 'lines+markers'
 
-def filter_traces(traces:list[dlh.trace_structure], planner):
-    planner = planner.removesuffix('.json').split('\\')[-1]
-    with open(f'.\\resources\\{planner}.json', 'r') as f:
-        jdata:dict[str,dict] = json.load(f)
+
+def filter_traces(traces: list[dlh.trace_structure], planner):
+    planner = planner.removesuffix('.json').split('/')[-1]
+    with open(f'./resources/{planner}.json', 'r') as f:
+        jdata: dict[str, dict] = json.load(f)
     can_id = {}
     array_name = {}
     gloabl_blacklist = set(jdata['settings']['global_blacklist'])
     groups = {}
-    #gonna handle it in a few steps, def not the fastest way but should work for now
+    # gonna handle it in a few steps, def not the fastest way but should work for now
     for i in traces:
         if i.name in gloabl_blacklist:
             continue
@@ -85,7 +96,7 @@ def filter_traces(traces:list[dlh.trace_structure], planner):
         del can_id['_']
     groupings = jdata['groupings']
     for group_name in groupings:
-        #Making sets for faster sspeeds... not sure it really matters but why not
+        # Making sets for faster sspeeds... not sure it really matters but why not
         trace_names = set(groupings[group_name]['trace_names'])
         array_names = groupings[group_name]['array_names']
         sources = groupings[group_name]['sources']
@@ -105,12 +116,13 @@ def filter_traces(traces:list[dlh.trace_structure], planner):
                 groups[group_name].append(trace)
                 continue
     return groups, can_id, array_name
-        
-def plot_by_filename(filename:str, planner:str):
+
+
+def plot_by_filename(filename: str, planner: str):
     log = dlh.DatalogHandler(sys.argv[1])
     global i_TimeFixer
     i_TimeFixer = timeFixer(log.timeOffset)
-    _groups, _can_id, _array_name = filter_traces(log, planner) #type: ignore
+    _groups, _can_id, _array_name = filter_traces(log, planner)  # type: ignore
     for i in _groups:
         plot(_groups[i], i)
     for i in _can_id:
@@ -118,15 +130,20 @@ def plot_by_filename(filename:str, planner:str):
     for i in _array_name:
         plot(_array_name[i], f'ARRAY: {i}')
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot a log file')
     # mut_group = parser.add_mutually_exclusive_group()
     parser.add_argument('filename', type=str, help='The file to plot')
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-p','--plot', action='store_true', help='The file to plot, needs -c aswell')
-    group.add_argument('-g', '--gui', action='store_true', help='Run the config helper gui, needs -c aswell')
-    parser.add_argument('-c', '--config', type=str, help='The json in resources to config the plots with', )
-    parser.add_argument('-d', '--dump', help='A preliminary dump of the log file for data to use in gui, feed in name of robot')
+    group.add_argument('-p', '--plot', action='store_true',
+                       help='The file to plot, needs -c aswell')
+    group.add_argument('-g', '--gui', action='store_true',
+                       help='Run the config helper gui, needs -c aswell')
+    parser.add_argument('-c', '--config', type=str,
+                        help='The json in resources to config the plots with', )
+    parser.add_argument('-d', '--dump',
+                        help='A preliminary dump of the log file for data to use in gui, feed in name of robot')
     args = parser.parse_args()
     if args.dump:
         from API.LogDumper import dump
@@ -144,3 +161,7 @@ if __name__ == '__main__':
         else:
             print('No config file specified, cannot plot')
             exit(1)
+
+
+def run_as_module(_log_path: Path, _cfg_path: Path, _out_path: Path):
+    pass

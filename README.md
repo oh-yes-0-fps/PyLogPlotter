@@ -20,4 +20,4 @@ example:
     PyPlotter.py filename.wpiLog \[-p|-g|-d robotname\] \[-c config.json\]
 
 working one with given example files:
-    PyPlotter.py FRC_20221022_150128_NYROC_Q17.wpilog -p -c plot_config_cruisee.json
+    PyPlotter.py FRC_20221022_150128_NYROC_Q17.wpilog -p -c plot_config_cruisee_example.json
